@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiskBird 企业信息采集</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-bg: #eff6ff;
+    --success: #10b981;
+    --success-bg: #ecfdf5;
+    --danger: #ef4444;
+    --danger-bg: #fef2f2;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .container {
+    max-width: 640px;
+    width: 100%;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+  .header p {
+    color: var(--muted);
+    margin-top: 6px;
+    font-size: 14px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--primary);
+    background: var(--primary-bg);
+  }
+  .upload-zone svg {
+    width: 40px;
+    height: 40px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .upload-zone .label {
+    font-size: 15px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .upload-zone .hint {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .upload-zone input { display: none; }
+  .upload-zone.has-file {
+    border-color: var(--success);
+    border-style: solid;
+    background: var(--success-bg);
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+    width: 100%;
+  }
+  .btn-primary:hover:not(:disabled) {
+    opacity: .9;
+  }
+  .btn-success {
+    background: var(--success);
+    color: #fff;
+    width: 100%;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+  }
+  .progress-section { display: none; }
+  .progress-section.active { display: block; }
+  .progress-bar-outer {
+    background: var(--border);
+    border-radius: 8px;
+    height: 8px;
+    overflow: hidden;
+    margin: 16px 0 8px;
+  }
+  .progress-bar-inner {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 8px;
+    width: 0;
+    transition: width .3s ease;
+  }
+  .progress-stats {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .progress-stats .count { font-weight: 500; color: var(--text); }
+  .status-msg {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .qr-section {
+    display: none;
+    text-align: center;
+    padding: 20px 0;
+  }
+  .qr-section.active { display: block; }
+  .qr-section img {
+    width: 200px;
+    height: 200px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .qr-section .qr-hint {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 10px;
+  }
+  .log-section {
+    display: none;
+    margin-top: 16px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    font-family: "SF Mono", Menlo, monospace;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  .log-section.active { display: block; }
+  .error-box {
+    display: none;
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin-top: 12px;
+  }
+  .error-box.active { display: block; }
+  .result-box {
+    display: none;
+    text-align: center;
+    padding: 20px 0;
+  }
+  .result-box.active { display: block; }
+  .result-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--success-bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .result-icon svg { width: 28px; height: 28px; color: var(--success); }
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>🦅 RiskBird 企业信息采集</h1>
+    <p>上传 Excel → 自动采集联系方式 & 注册资本 → 下载结果</p>
+  </div>
+
+  <div class="card" id="uploadCard">
+    <div class="upload-zone" id="dropZone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+      <div class="label">点击选择或拖拽 Excel 文件</div>
+      <div class="hint">支持 .xlsx .xls 格式，每日限额50条</div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    </div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-primary" id="startBtn" disabled>
+        上传并开始采集
+      </button>
+    </div>
+  </div>
+
+  <div class="card progress-section" id="progressCard">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-weight:500;font-size:15px;">采集进度</span>
+      <span class="spinner" id="spinner"></span>
+    </div>
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progressBar"></div>
+    </div>
+    <div class="progress-stats">
+      <span class="count" id="progressCount">0 / 0</span>
+      <span id="progressPercent">0%</span>
+    </div>
+    <div class="status-msg" id="statusMsg">准备中...</div>
+    <div class="log-section" id="logSection"></div>
+  </div>
+
+  <div class="card qr-section" id="qrCard">
+    <div style="font-weight:500;font-size:15px;margin-bottom:16px;">需要扫码登录 RiskBird</div>
+    <img id="qrImage" src="" alt="QR Code">
+    <div class="qr-hint">请用微信扫描二维码完成登录</div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-ghost" id="qrDoneBtn" style="width:100%;">
+        我已扫码完成登录
+      </button>
+    </div>
+  </div>
+
+  <div class="card error-box" id="errorBox"></div>
+
+  <div class="card result-box" id="resultBox">
+    <div class="result-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div style="font-weight:500;font-size:16px;margin-bottom:4px;">采集完成！</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="resultMsg"></div>
+    <button class="btn btn-success" id="downloadBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      下载采集结果 Excel
+    </button>
+    <button class="btn btn-ghost" id="newTaskBtn" style="margin-top:12px;width:100%;">
+      开始新任务
+    </button>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const startBtn = document.getElementById('startBtn');
+  const progressCard = document.getElementById('progressCard');
+  const progressBar = document.getElementById('progressBar');
+  const progressCount = document.getElementById('progressCount');
+  const progressPercent = document.getElementById('progressPercent');
+  const statusMsg = document.getElementById('statusMsg');
+  const logSection = document.getElementById('logSection');
+  const spinner = document.getElementById('spinner');
+  const qrCard = document.getElementById('qrCard');
+  const qrImage = document.getElementById('qrImage');
+  const qrDoneBtn = document.getElementById('qrDoneBtn');
+  const errorBox = document.getElementById('errorBox');
+  const resultBox = document.getElementById('resultBox');
+  const resultMsg = document.getElementById('resultMsg');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const newTaskBtn = document.getElementById('newTaskBtn');
+  const uploadCard = document.getElementById('uploadCard');
+
+  let jobId = null;
+  let ws = null;
+  let selectedFile = null;
+
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length) handleFile(files[0]);
+  });
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file.name.match(/\.xlsx?$/i)) {
+      showError('请选择 .xlsx 或 .xls 格式的文件');
+      return;
+    }
+    selectedFile = file;
+    dropZone.classList.add('has-file');
+    dropZone.querySelector('.label').textContent = file.name;
+    dropZone.querySelector('.hint').textContent = `${(file.size / 1024).toFixed(0)} KB`;
+    startBtn.disabled = false;
+  }
+
+  startBtn.addEventListener('click', startJob);
+  qrDoneBtn.addEventListener('click', confirmLogin);
+  downloadBtn.addEventListener('click', downloadResult);
+  newTaskBtn.addEventListener('click', resetAll);
+
+  async function startJob() {
+    if (!selectedFile) return;
+
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<span class="spinner"></span> 上传中...';
+    uploadCard.style.display = 'none';
+    progressCard.classList.add('active');
+    spinner.style.display = 'inline-block';
+    statusMsg.textContent = '上传文件中...';
+
+    try {
+      const form = new FormData();
+      form.append('file', selectedFile);
+
+      const resp = await fetch('/api/upload', { method: 'POST', body: form });
+      const data = await resp.json();
+      if (data.error) { throw new Error(data.error); }
+
+      jobId = data.job_id;
+      const total = data.total;
+
+      progressCount.textContent = `0 / ${total}`;
+      progressPercent.textContent = '0%';
+      statusMsg.textContent = `文件共 ${total} 条记录，准备开始采集...`;
+      logSection.classList.add('active');
+      logSection.innerHTML = '';
+
+      connectWS(jobId);
+
+      const startResp = await fetch(`/api/start/${jobId}`, { method: 'POST' });
+      if (!startResp.ok) throw new Error('启动失败');
+    } catch (e) {
+      showError(e.message);
+      spinner.style.display = 'none';
+      startBtn.disabled = false;
+      startBtn.textContent = '上传并开始采集';
+    }
+  }
+
+  function connectWS(id) {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${proto}//${location.host}/ws/${id}`;
+
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      addLog('WebSocket 已连接');
+    };
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      handleMessage(msg);
+    };
+
+    ws.onclose = () => {
+      addLog('WebSocket 已断开');
+      if (spinner.style.display !== 'none') {
+        spinner.style.display = 'none';
+      }
+    };
+
+    ws.onerror = () => {
+      addLog('WebSocket 连接错误，将使用轮询模式');
+      setInterval(pollStatus, 3000);
+    };
+
+    setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 30000);
+  }
+
+  function handleMessage(msg) {
+    switch (msg.type) {
+      case 'status':
+        statusMsg.textContent = msg.message || msg.status;
+        break;
+
+      case 'progress':
+        const pct = msg.total > 0 ? Math.round(msg.current / msg.total * 100) : 0;
+        progressBar.style.width = pct + '%';
+        progressCount.textContent = `${msg.current} / ${msg.total}`;
+        progressPercent.textContent = pct + '%';
+        statusMsg.textContent = msg.message;
+        if (msg.capital || msg.phones) {
+          addLog(`${msg.message} | 资本:${msg.capital || '—'} 电话:${msg.phones?.join(',') || '—'}`);
+        } else {
+          addLog(msg.message);
+        }
+        spinner.style.display = 'none';
+        break;
+
+      case 'qr':
+        spinner.style.display = 'none';
+        qrCard.classList.add('active');
+        qrImage.src = 'data:image/png;base64,' + msg.image;
+        statusMsg.textContent = msg.message || '请扫描二维码登录';
+        break;
+
+      case 'qr_fullpage':
+        spinner.style.display = 'none';
+        qrCard.classList.add('active');
+        qrImage.src = 'data:image/png;base64,' + msg.image;
+        statusMsg.textContent = msg.message || '请查看页面截图手动登录';
+        break;
+
+      case 'need_login':
+        statusMsg.textContent = msg.message || '需要登录';
+        break;
+
+      case 'logged_in':
+        statusMsg.textContent = '登录成功，开始采集...';
+        qrCard.classList.remove('active');
+        spinner.style.display = 'inline-block';
+        break;
+
+      case 'complete':
+        spinner.style.display = 'none';
+        progressBar.style.width = '100%';
+        progressPercent.textContent = '100%';
+        statusMsg.textContent = msg.message;
+        resultBox.classList.add('active');
+        resultMsg.textContent = `成功采集 ${msg.total_success} 条记录`;
+        break;
+
+      case 'error':
+        showError(msg.message);
+        spinner.style.display = 'none';
+        break;
+
+      case 'pong':
+        break;
+    }
+  }
+
+  async function pollStatus() {
+    if (!jobId) return;
+    try {
+      const resp = await fetch(`/api/status/${jobId}`);
+      const data = await resp.json();
+      if (!data) return;
+      if (data.progress && data.total) {
+        const pct = Math.round(data.progress / data.total * 100);
+        progressBar.style.width = pct + '%';
+        progressCount.textContent = `${data.progress} / ${data.total}`;
+        progressPercent.textContent = pct + '%';
+        statusMsg.textContent = data.message;
+        spinner.style.display = 'none';
+      }
+      if (data.status === 'complete') {
+        resultBox.classList.add('active');
+        resultMsg.textContent = `采集完成`;
+        spinner.style.display = 'none';
+      }
+      if (data.status === 'need_login') {
+        const qrResp = await fetch(`/api/qr/${jobId}`);
+        const qrData = await qrResp.json();
+        if (qrData.qr_base64) {
+          qrCard.classList.add('active');
+          qrImage.src = 'data:image/png;base64,' + qrData.qr_base64;
+        }
+      }
+    } catch (e) {}
+  }
+
+  function confirmLogin() {
+    qrCard.classList.remove('active');
+    spinner.style.display = 'inline-block';
+    statusMsg.textContent = '确认登录中...';
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'login_ok' }));
+    }
+    fetch(`/api/login_ok/${jobId}`, { method: 'POST' }).catch(() => {});
+  }
+
+  function addLog(line) {
+    const div = document.createElement('div');
+    div.textContent = `[${new Date().toLocaleTimeString()}] ${line}`;
+    logSection.appendChild(div);
+    logSection.scrollTop = logSection.scrollHeight;
+  }
+
+  function showError(msg) {
+    errorBox.classList.add('active');
+    errorBox.textContent = '❌ ' + msg;
+    setTimeout(() => errorBox.classList.remove('active'), 8000);
+  }
+
+  function downloadResult() {
+    if (jobId) {
+      window.open(`/api/download/${jobId}`, '_blank');
+    }
+  }
+
+  function resetAll() {
+    if (ws) { ws.close(); ws = null; }
+    jobId = null;
+    selectedFile = null;
+    dropZone.classList.remove('has-file');
+    dropZone.querySelector('.label').textContent = '点击选择或拖拽 Excel 文件';
+    dropZone.querySelector('.hint').textContent = '支持 .xlsx .xls 格式，每日限额50条';
+    startBtn.disabled = true;
+    startBtn.textContent = '上传并开始采集';
+    uploadCard.style.display = '';
+    progressCard.classList.remove('active');
+    qrCard.classList.remove('active');
+    errorBox.classList.remove('active');
+    resultBox.classList.remove('active');
+    logSection.classList.remove('active');
+    logSection.innerHTML = '';
+    progressBar.style.width = '0%';
+    progressCount.textContent = '0 / 0';
+    progressPercent.textContent = '0%';
+    statusMsg.textContent = '';
+    spinner.style.display = 'none';
+  }
+})();
+</script>
+</body>
+</html>

@@ -10,6 +10,7 @@ import sys
 import traceback
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
 
 import pandas as pd
 from playwright.async_api import async_playwright
@@ -201,7 +202,7 @@ async def search_and_collect(page, company_name: str) -> dict:
     return result
 
 
-async def find_company_detail_link(page, company_name: str) -> str | None:
+async def find_company_detail_link(page, company_name: str) -> Optional[str]:
     import json
     js = """
     (() => {
